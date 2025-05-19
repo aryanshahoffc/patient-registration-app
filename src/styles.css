@@ -661,3 +661,17 @@ button:hover {
   border: 1px solid var(--border-color);
   border-radius: 4px;
 }
+
+.theme-toggle {
+  padding: 8px;
+  font-size: 1.2em;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}

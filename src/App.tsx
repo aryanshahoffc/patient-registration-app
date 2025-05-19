@@ -14,11 +14,6 @@ export interface DatabaseInterface {
   query: (sql: string, params?: any[]) => Promise<any>;
 }
 
-interface QueryResultRow {
-  [key: string]: any;
-  count?: number;
-}
-
 function App() {
   const [db, setDb] = useState<DatabaseInterface | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -26,23 +21,23 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [patientCount, setPatientCount] = useState(0)
 
-  // Theme management
+  // Theme management with toggle function
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem(THEME_KEY, theme)
   }, [theme])
 
-  // Database initialization and persistence
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')
+  }
+
+  // Database initialization
   useEffect(() => {
-    let isInitialized = false;
-
     const initDb = async () => {
-      if (isInitialized) return;
-      
       try {
-        const pglite = new PGlite()
+        const pglite = new PGlite('./pglite')
 
-        // Create the patients table
+        // Create the patients table if it doesn't exist
         await pglite.query(`
           CREATE TABLE IF NOT EXISTS patients (
             id SERIAL PRIMARY KEY,
@@ -80,7 +75,6 @@ function App() {
           }
         }
 
-        // Create database interface with auto-save
         const dbInterface: DatabaseInterface = {
           query: async (sql: string, params: any[] = []) => {
             const result = await pglite.query(sql, params)
@@ -105,19 +99,14 @@ function App() {
           setPatientCount(Number(result.rows[0].count))
         }
 
-        isInitialized = true;
       } catch (err) {
         console.error('Database initialization error:', err)
         setError(err instanceof Error ? err.message : 'Failed to initialize database')
       }
     }
 
-    initDb();
-
-    return () => {
-      isInitialized = true; // Prevent re-initialization attempts on unmount
-    };
-  }, []);
+    initDb()
+  }, [])
 
   const updatePatientCount = async () => {
     if (db) {
@@ -253,6 +242,11 @@ function App() {
               </li>
               <li className={activeTab === 'sql' ? 'active' : ''}>
                 <button onClick={() => setActiveTab('sql')}>SQL Query</button>
+              </li>
+              <li>
+                <button onClick={toggleTheme} className="theme-toggle">
+                  {theme === 'dark' ? '☀️' : '🌙'}
+                </button>
               </li>
             </ul>
           </nav>

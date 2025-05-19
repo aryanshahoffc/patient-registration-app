@@ -1,126 +1,141 @@
-import { useForm } from 'react-hook-form'
-import { useMutation, useQueryClient } from 'react-query'
-import { Database } from 'sql.js'
+import React, { useState } from 'react';
+import { DatabaseInterface } from '../App';
 
-interface PatientForm {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
+interface PatientRegistrationProps {
+  db: DatabaseInterface;
+  onSuccess: () => void;
+}
+
+interface PatientData {
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
   email: string;
   phone: string;
 }
 
-interface PatientRegistrationProps {
-  db: Database;
-  onSuccess?: () => void;
-}
+const PatientRegistration: React.FC<PatientRegistrationProps> = ({ db, onSuccess }) => {
+  const [formData, setFormData] = useState<PatientData>({
+    first_name: '',
+    last_name: '',
+    date_of_birth: '',
+    email: '',
+    phone: ''
+  });
 
-const PatientRegistration = ({ db, onSuccess }: PatientRegistrationProps) => {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<PatientForm>()
-  const queryClient = useQueryClient()
-  
-  const mutation = useMutation(
-    async (data: PatientForm) => {
-      db.run(
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    try {
+      await db.query(
         `INSERT INTO patients (first_name, last_name, date_of_birth, email, phone)
-         VALUES (?, ?, ?, ?, ?)`,
-        [data.firstName, data.lastName, data.dateOfBirth, data.email, data.phone]
-      )
-    },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries('patients')
-        reset()
-        onSuccess?.()
-      },
-    }
-  )
+         VALUES ($1, $2, $3, $4, $5)`,
+        [formData.first_name, formData.last_name, formData.date_of_birth, formData.email, formData.phone]
+      );
 
-  const onSubmit = (data: PatientForm) => {
-    mutation.mutate(data)
-  }
+      setSuccess(true);
+      setFormData({
+        first_name: '',
+        last_name: '',
+        date_of_birth: '',
+        email: '',
+        phone: ''
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to register patient');
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   return (
-    <article>
-      <h2>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M19 8v6m3-3h-6" />
-        </svg>
-        New Patient Registration
-      </h2>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="form-grid">
-          <label>
-            First Name
-            <input
-              type="text"
-              placeholder="Enter first name"
-              {...register('firstName', { required: true })}
-            />
-            {errors.firstName && <small className="error-message">This field is required</small>}
-          </label>
-
-          <label>
-            Last Name
-            <input
-              type="text"
-              placeholder="Enter last name"
-              {...register('lastName', { required: true })}
-            />
-            {errors.lastName && <small className="error-message">This field is required</small>}
-          </label>
+    <form onSubmit={handleSubmit} className="registration-form">
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
         </div>
-
-        <div className="form-grid">
-          <label>
-            Date of Birth
-            <input
-              type="date"
-              {...register('dateOfBirth', { required: true })}
-            />
-            {errors.dateOfBirth && <small className="error-message">This field is required</small>}
-          </label>
-
-          <label>
-            Email
-            <input
-              type="email"
-              placeholder="patient@example.com"
-              {...register('email', {
-                pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              })}
-            />
-            {errors.email && <small className="error-message">Invalid email address</small>}
-          </label>
+      )}
+      {success && (
+        <div className="success-message" role="status">
+          Patient registered successfully!
         </div>
+      )}
+      
+      <div className="form-group">
+        <label htmlFor="first_name">First Name:</label>
+        <input
+          type="text"
+          id="first_name"
+          name="first_name"
+          value={formData.first_name}
+          onChange={handleChange}
+          required
+        />
+      </div>
 
-        <label>
-          Phone Number
-          <input
-            type="tel"
-            placeholder="(123) 456-7890"
-            {...register('phone')}
-          />
-        </label>
+      <div className="form-group">
+        <label htmlFor="last_name">Last Name:</label>
+        <input
+          type="text"
+          id="last_name"
+          name="last_name"
+          value={formData.last_name}
+          onChange={handleChange}
+          required
+        />
+      </div>
 
-        <button 
-          type="submit" 
-          disabled={mutation.isLoading}
-          aria-busy={mutation.isLoading}
-        >
-          {mutation.isLoading ? 'Registering Patient...' : 'Register Patient'}
-        </button>
+      <div className="form-group">
+        <label htmlFor="date_of_birth">Date of Birth:</label>
+        <input
+          type="date"
+          id="date_of_birth"
+          name="date_of_birth"
+          value={formData.date_of_birth}
+          onChange={handleChange}
+          required
+        />
+      </div>
 
-        {mutation.isSuccess && (
-          <div className="success-message">
-            Patient registered successfully!
-          </div>
-        )}
-      </form>
-    </article>
-  )
-}
+      <div className="form-group">
+        <label htmlFor="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+        />
+      </div>
 
-export default PatientRegistration
+      <div className="form-group">
+        <label htmlFor="phone">Phone:</label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+        />
+      </div>
+
+      <button type="submit" className="submit-button">
+        Register Patient
+      </button>
+    </form>
+  );
+};
+
+export default PatientRegistration;

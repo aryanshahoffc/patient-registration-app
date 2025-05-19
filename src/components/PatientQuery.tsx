@@ -1,81 +1,81 @@
-import { useState } from 'react'
-import { useQuery } from 'react-query'
-import { Database } from 'sql.js'
+import React, { useState } from 'react';
+import { DatabaseInterface } from '../App';
 
 interface PatientQueryProps {
-  db: Database
+  db: DatabaseInterface;
 }
 
-const queryPresets = {
-  allPatients: 'SELECT * FROM patients ORDER BY created_at DESC;',
-  recentPatients: 'SELECT * FROM patients ORDER BY created_at DESC LIMIT 5;',
-  patientCount: 'SELECT COUNT(*) as total_patients FROM patients;',
-  todayPatients: "SELECT * FROM patients WHERE date(created_at) = date('now');",
-} as const
+interface QueryResult {
+  rows: Record<string, any>[];
+  columns: string[];
+}
 
-type QueryResult = {
-  [key: string]: any
-}[]
+const PatientQuery: React.FC<PatientQueryProps> = ({ db }) => {
+  const [query, setQuery] = useState<string>('SELECT * FROM patients');
+  const [results, setResults] = useState<QueryResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-const PatientQuery = ({ db }: PatientQueryProps) => {
-  const [sqlQuery, setSqlQuery] = useState<string>(queryPresets.recentPatients)
-  const [error, setError] = useState<string>('')
+  const handleQueryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setQuery(e.target.value);
+  };
 
-  const { data, isLoading, refetch } = useQuery<QueryResult>(
-    ['patients', sqlQuery],
-    async () => {
-      try {
-        setError('')
-        const result = db.exec(sqlQuery)
-        if (result.length === 0) return []
-        
-        const columns = result[0].columns
-        return result[0].values.map(row => 
-          Object.fromEntries(row.map((value, i) => [columns[i], value]))
-        )
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred'
-        setError(errorMessage)
-        return []
+  const executeQuery = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Validate query
+      if (!query.trim()) {
+        throw new Error('Query cannot be empty');
       }
-    }
-  )
 
-  const handlePresetSelect = (preset: keyof typeof queryPresets) => {
-    setSqlQuery(queryPresets[preset])
-  }
+      const result = await db.query(query);
+      console.log('Query result:', result); // Debug log
+
+      // Handle empty result
+      if (!result || !result.rows) {
+        setResults({
+          rows: [],
+          columns: []
+        });
+        return;
+      }
+
+      // Get columns from the first row
+      const columns = result.rows.length > 0 
+        ? Object.keys(result.rows[0]) 
+        : [];
+
+      setResults({
+        rows: result.rows,
+        columns
+      });
+    } catch (err) {
+      console.error('Query error:', err); // Debug log
+      setError(err instanceof Error ? err.message : 'Error executing query');
+      setResults(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="query-interface">
-      <div className="query-presets">
-        <h3>Quick Queries</h3>
-        <div className="preset-buttons">
-          {(Object.keys(queryPresets) as Array<keyof typeof queryPresets>).map(preset => (
-            <button
-              key={preset}
-              onClick={() => handlePresetSelect(preset)}
-              className={sqlQuery === queryPresets[preset] ? 'active' : ''}
-            >
-              {preset.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="query-editor">
+    <div className="query-container">
+      <div className="query-input">
         <textarea
-          value={sqlQuery}
-          onChange={(e) => setSqlQuery(e.target.value)}
-          rows={4}
+          value={query}
+          onChange={handleQueryChange}
           placeholder="Enter your SQL query here..."
-          className="sql-textarea"
+          rows={4}
+          className="query-textarea"
         />
         <button 
-          onClick={() => refetch()}
-          disabled={isLoading}
+          onClick={executeQuery} 
           className="execute-button"
+          disabled={isLoading}
         >
-          {isLoading ? 'Running Query...' : 'Execute Query'}
+          {isLoading ? 'Executing...' : 'Execute Query'}
         </button>
       </div>
 
@@ -85,38 +85,66 @@ const PatientQuery = ({ db }: PatientQueryProps) => {
         </div>
       )}
 
-      {isLoading ? (
-        <div className="loading-state">
-          <p>Executing query...</p>
-        </div>
-      ) : data && data.length > 0 ? (
-        <div className="results-table">
-          <table>
-            <thead>
-              <tr>
-                {Object.keys(data[0]).map((key) => (
-                  <th key={key}>{key.replace(/_/g, ' ').toUpperCase()}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i}>
-                  {Object.values(row).map((value, j) => (
-                    <td key={j}>{String(value)}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="no-results">
-          No results found. Try a different query.
+      {isLoading && (
+        <div className="loading-message">
+          Executing query...
         </div>
       )}
-    </div>
-  )
-}
 
-export default PatientQuery
+      {results && (
+        <div className="results-container">
+          {results.rows.length === 0 ? (
+            <p>No results found</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  {results.columns.map((column) => (
+                    <th key={column}>{column}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {results.rows.map((row, i) => (
+                  <tr key={i}>
+                    {results.columns.map((column) => (
+                      <td key={`${i}-${column}`}>
+                        {row[column] !== null ? String(row[column]) : 'NULL'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      <div className="query-examples">
+        <h3>Example Queries:</h3>
+        <div className="example-queries">
+          <button 
+            onClick={() => setQuery('SELECT * FROM patients ORDER BY created_at DESC')}
+            className="example-button"
+          >
+            List All Patients
+          </button>
+          <button 
+            onClick={() => setQuery("SELECT first_name, last_name, date_of_birth FROM patients WHERE first_name LIKE 'J%'")}
+            className="example-button"
+          >
+            Search by Name
+          </button>
+          <button 
+            onClick={() => setQuery('SELECT COUNT(*) as total_patients FROM patients')}
+            className="example-button"
+          >
+            Count Patients
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PatientQuery;

@@ -8,9 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
-  },
-  "dependencies": {
-    "@pgvector/postgresjs": "^0.1.2",
+  },  "dependencies": {
     "@picocss/pico": "^1.5.10",
     "pglite": "^1.0.4",
     "react": "^18.2.0",

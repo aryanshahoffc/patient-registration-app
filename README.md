@@ -1,6 +1,6 @@
 # PatientScribeSync
 
-A modern, frontend-only patient management system built with React, TypeScript, and SQL.js. This application provides a secure way to manage patient records directly in the browser with no backend required.
+A modern, frontend-only patient management system built with React, TypeScript, and PGlite. This application provides a secure way to manage patient records directly in the browser with no backend required.
 
 ## Features
 
@@ -50,17 +50,17 @@ src/
 
 ## Database Schema
 
-The application uses SQL.js with the following schema:
+The application uses PGlite with the following schema:
 
 ```sql
 CREATE TABLE patients (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   date_of_birth TEXT NOT NULL,
   email TEXT UNIQUE,
   phone TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -68,7 +68,7 @@ CREATE TABLE patients (
 
 The project is built using:
 - React with TypeScript for the UI
-- SQL.js for local database operations
+- PGlite for local database operations
 - React Query for state management
 - Vite as the build tool
 

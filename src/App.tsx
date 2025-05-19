@@ -33,12 +33,14 @@ function App() {
 
   // Database initialization
   useEffect(() => {
-    let pglite: PGlite | null = null
+    let pglite: PGlite | null = null;
 
     const initDb = async () => {
       try {
-        // Initialize PGlite with a data directory path
-        pglite = new PGlite('./pglite-data')
+        pglite = new PGlite();
+
+        // Wait a bit for initialization
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Create the patients table
         await pglite.query(`
@@ -51,7 +53,7 @@ function App() {
             phone TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
-        `)
+        `);
 
         // Try to restore data from localStorage
         const savedData = localStorage.getItem(DB_KEY)
@@ -113,7 +115,6 @@ function App() {
 
     return () => {
       if (pglite) {
-        // Cleanup
         try {
           pglite.query('COMMIT')
         } catch (e) {

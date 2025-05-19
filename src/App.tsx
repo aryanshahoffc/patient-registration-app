@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import initSqlJs, { Database } from 'sql.js'
+import { PGlite } from '@electric-sql/pglite'
 import PatientRegistration from './components/PatientRegistration'
 import PatientQuery from './components/PatientQuery'
 
 const queryClient = new QueryClient()
-const DB_KEY = 'patient_db'
 const THEME_KEY = 'theme_preference'
+const DB_KEY = 'patient_db_state'
 
 type TabType = 'dashboard' | 'registration' | 'patients' | 'sql';
 
+export interface DatabaseInterface {
+  query: (sql: string, params?: any[]) => Promise<any>;
+}
+
+interface QueryResultRow {
+  [key: string]: any;
+  count?: number;
+}
+
 function App() {
-  const [db, setDb] = useState<Database | null>(null)
+  const [db, setDb] = useState<DatabaseInterface | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'dark')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
@@ -23,67 +32,97 @@ function App() {
     localStorage.setItem(THEME_KEY, theme)
   }, [theme])
 
-  // Database initialization
+  // Database initialization and persistence
   useEffect(() => {
+    let isInitialized = false;
+
     const initDb = async () => {
+      if (isInitialized) return;
+      
       try {
-        const SQL = await initSqlJs({
-          locateFile: file => `https://sql.js.org/dist/${file}`
-        })
+        const pglite = new PGlite()
 
-        // Try to load existing database from localStorage
-        const savedDb = localStorage.getItem(DB_KEY)
-        let database: Database
+        // Create the patients table
+        await pglite.query(`
+          CREATE TABLE IF NOT EXISTS patients (
+            id SERIAL PRIMARY KEY,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            date_of_birth TEXT NOT NULL,
+            email TEXT UNIQUE,
+            phone TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `)
 
-        if (savedDb) {
-          const uint8Array = new Uint8Array(JSON.parse(savedDb))
-          database = new SQL.Database(uint8Array)
-        } else {
-          database = new SQL.Database()
-          database.run(`
-            CREATE TABLE IF NOT EXISTS patients (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              first_name TEXT NOT NULL,
-              last_name TEXT NOT NULL,
-              date_of_birth TEXT NOT NULL,
-              email TEXT UNIQUE,
-              phone TEXT,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-          `)
+        // Try to restore data from localStorage
+        const savedData = localStorage.getItem(DB_KEY)
+        if (savedData) {
+          try {
+            const patients = JSON.parse(savedData)
+            for (const patient of patients) {
+              await pglite.query(
+                `INSERT INTO patients (first_name, last_name, date_of_birth, email, phone, created_at) 
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 ON CONFLICT (email) DO NOTHING`,
+                [
+                  patient.first_name,
+                  patient.last_name,
+                  patient.date_of_birth,
+                  patient.email,
+                  patient.phone,
+                  patient.created_at
+                ]
+              )
+            }
+          } catch (e) {
+            console.error('Error restoring data:', e)
+          }
         }
 
-        // Set up auto-save every 2 seconds
-        const autoSaveInterval = setInterval(() => {
-          if (database) {
-            const data = database.export()
-            localStorage.setItem(DB_KEY, JSON.stringify(Array.from(data)))
+        // Create database interface with auto-save
+        const dbInterface: DatabaseInterface = {
+          query: async (sql: string, params: any[] = []) => {
+            const result = await pglite.query(sql, params)
+            
+            // After any modification query, save the current state
+            if (sql.toLowerCase().includes('insert') || 
+                sql.toLowerCase().includes('update') || 
+                sql.toLowerCase().includes('delete')) {
+              const allPatients = await pglite.query('SELECT * FROM patients')
+              localStorage.setItem(DB_KEY, JSON.stringify(allPatients.rows))
+            }
+            
+            return result
           }
-        }, 2000)
+        }
 
-        setDb(database)
+        setDb(dbInterface)
 
         // Get initial patient count
-        const result = database.exec("SELECT COUNT(*) as count FROM patients")[0]
-        setPatientCount(result.values[0][0] as number)
-
-        // Cleanup interval on unmount
-        return () => {
-          clearInterval(autoSaveInterval)
-          database.close()
+        const result = await pglite.query<{ count: string }>('SELECT COUNT(*) as count FROM patients')
+        if (result.rows?.[0]) {
+          setPatientCount(Number(result.rows[0].count))
         }
+
+        isInitialized = true;
       } catch (err) {
+        console.error('Database initialization error:', err)
         setError(err instanceof Error ? err.message : 'Failed to initialize database')
       }
     }
 
-    initDb()
-  }, [])
+    initDb();
 
-  const updatePatientCount = () => {
+    return () => {
+      isInitialized = true; // Prevent re-initialization attempts on unmount
+    };
+  }, []);
+
+  const updatePatientCount = async () => {
     if (db) {
-      const result = db.exec("SELECT COUNT(*) as count FROM patients")[0]
-      setPatientCount(result.values[0][0] as number)
+      const result = await db.query('SELECT COUNT(*) as count FROM patients')
+      setPatientCount(Number(result.rows[0].count))
     }
   }
 

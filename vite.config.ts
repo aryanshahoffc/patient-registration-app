@@ -5,20 +5,25 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: ['@electric-sql/pglite']
+    include: ['@electric-sql/pglite'],
+    esbuildOptions: {
+      target: 'esnext'
+    }
   },
   build: {
-    rollupOptions: {
-      external: ['@electric-sql/pglite'],
-      output: {
-        manualChunks: {
-          pglite: ['@electric-sql/pglite']
-        }
-      }
-    },
     target: 'esnext',
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    commonjsOptions: {
+      include: [/@electric-sql\/pglite/, /node_modules/],
+      transformMixedEsModules: true
+    },
+    rollupOptions: {
+      output: {
+        format: 'es',
+        inlineDynamicImports: true
+      }
+    }
   },
   resolve: {
     alias: {
@@ -33,8 +38,5 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp'
     }
-  },
-  worker: {
-    format: 'es'
   }
 })

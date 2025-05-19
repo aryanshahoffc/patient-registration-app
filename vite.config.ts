@@ -7,30 +7,31 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@electric-sql/pglite']
   },
-  server: {
-    port: 3000,
-    host: true,
-    open: true,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    }
+  build: {
+    rollupOptions: {
+      external: ['@electric-sql/pglite'],
+      output: {
+        manualChunks: {
+          pglite: ['@electric-sql/pglite']
+        }
+      }
+    },
+    target: 'esnext',
+    outDir: 'dist',
+    sourcemap: true
   },
   resolve: {
     alias: {
       '@pglite': resolve(__dirname, 'public/pglite')
     }
   },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    target: 'esnext',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          pglite: ['@electric-sql/pglite']
-        }
-      }
+  server: {
+    port: 3000,
+    host: true,
+    open: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp'
     }
   },
   worker: {

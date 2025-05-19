@@ -21,7 +21,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [patientCount, setPatientCount] = useState(0)
 
-  // Theme management with toggle function
+  // Theme management
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem(THEME_KEY, theme)
@@ -33,11 +33,14 @@ function App() {
 
   // Database initialization
   useEffect(() => {
+    let pglite: PGlite | null = null
+
     const initDb = async () => {
       try {
-        const pglite = new PGlite('./pglite')
+        // Initialize PGlite with a data directory path
+        pglite = new PGlite('./pglite-data')
 
-        // Create the patients table if it doesn't exist
+        // Create the patients table
         await pglite.query(`
           CREATE TABLE IF NOT EXISTS patients (
             id SERIAL PRIMARY KEY,
@@ -77,6 +80,7 @@ function App() {
 
         const dbInterface: DatabaseInterface = {
           query: async (sql: string, params: any[] = []) => {
+            if (!pglite) throw new Error('Database not initialized')
             const result = await pglite.query(sql, params)
             
             // After any modification query, save the current state
@@ -106,6 +110,17 @@ function App() {
     }
 
     initDb()
+
+    return () => {
+      if (pglite) {
+        // Cleanup
+        try {
+          pglite.query('COMMIT')
+        } catch (e) {
+          console.error('Error cleaning up database:', e)
+        }
+      }
+    }
   }, [])
 
   const updatePatientCount = async () => {

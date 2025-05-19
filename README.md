@@ -1,56 +1,98 @@
-# Patient Registration System
+# PatientScribeSync
 
-A frontend-only patient registration system built with React, TypeScript, and PgLite for data storage. This application allows users to register new patients and query records using raw SQL, with data persistence across page refreshes and synchronized data across multiple tabs.
+A modern, frontend-only patient management system built with React, TypeScript, and SQL.js. This application provides a secure way to manage patient records directly in the browser with no backend required.
 
 ## Features
 
-- Patient registration form with validation
-- Raw SQL query interface
-- Data persistence using PgLite
-- Cross-tab data synchronization
-- Responsive UI using Pico CSS
+- 🏥 **Patient Registration**: Easy-to-use form for adding new patients
+- 📊 **Patient Records**: View and manage existing patient data
+- 🔍 **SQL Query Interface**: Advanced search capabilities using SQL
+- 💾 **Local Storage**: All data is stored securely in the browser
+- 🌓 **Dark/Light Theme**: Support for different viewing preferences
+- 📱 **Responsive Design**: Works on desktop and mobile devices
 
-## Setup
+## Prerequisites
 
-1. Install dependencies:
-```bash
-npm install
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+
+## Setup Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone [repository-url]
+   cd [repository-name]
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser and navigate to `http://localhost:5173`
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── PatientRegistration.tsx  # Patient registration form
+│   └── PatientQuery.tsx         # SQL query interface
+├── App.tsx                      # Main application component
+├── main.tsx                     # Application entry point
+└── styles.css                   # Global styles
 ```
 
-2. Start the development server:
-```bash
-npm run dev
-```
+## Database Schema
 
-3. Open your browser and navigate to `http://localhost:5173`
-
-## Usage
-
-### Registering a Patient
-Fill out the registration form with the patient's details and click "Register Patient". Required fields are marked with validation errors if left empty.
-
-### Querying Data
-Use the SQL query interface to search and filter patient records. Some example queries:
+The application uses SQL.js with the following schema:
 
 ```sql
--- Get all patients
-SELECT * FROM patients;
-
--- Search by name
-SELECT * FROM patients WHERE first_name LIKE '%John%';
-
--- Get recent registrations
-SELECT * FROM patients ORDER BY created_at DESC LIMIT 5;
+CREATE TABLE patients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  date_of_birth TEXT NOT NULL,
+  email TEXT UNIQUE,
+  phone TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## Development
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
+The project is built using:
+- React with TypeScript for the UI
+- SQL.js for local database operations
+- React Query for state management
+- Vite as the build tool
 
-## Notes
+## Git Commit History
 
-- Data is stored locally using PgLite and persists across page refreshes
-- Changes are synchronized across multiple tabs in the same browser
-- The application is frontend-only and doesn't require a backend server
+The project features are organized in the following commits:
+
+1. Initial project setup with Vite, React, and TypeScript configuration
+2. Add SQLite database initialization and schema for patient management
+3. Add patient registration form with validation and database integration
+4. Add patient query interface with SQL execution capabilities
+5. Add responsive UI design with dark theme support
+6. Add main application layout and navigation
+7. Add comprehensive documentation
+
+## License
+
+© 2025 PatientScribeSync. All rights reserved.
+
+## Security Note
+
+This application stores all data in the browser's local storage. While this ensures data privacy by keeping everything local, it also means:
+- Data persists only in the current browser
+- Clearing browser data will erase the database
+- No synchronization between devices
+
+Consider this application for demonstration or small-scale use cases where server-side storage is not required or desired.

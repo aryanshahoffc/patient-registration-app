@@ -1,0 +1,65 @@
+[33mcommit face932d729de6293944c051e3baf7d98db694cb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:40:46 2025 +0530
+
+    Add comprehensive documentation and setup instructions
+
+[33mcommit 1132d149afb1d8e3f2acafd733b0c0ec3567368e[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:39:21 2025 +0530
+
+    Add main application layout with navigation, dashboard, and theme support
+
+[33mcommit 52396e7944de55003cbaf7b5945fb612ba9a0288[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:35:55 2025 +0530
+
+    Add responsive UI design with dark theme support
+
+[33mcommit ccbe948d1be650a03fc99d09de4b84c0e9c3d2b9[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:35:34 2025 +0530
+
+    Add patient query interface with SQL execution capabilities
+
+[33mcommit 9a509adb600f5362190ecc39334d07b3958e41a9[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:35:19 2025 +0530
+
+    Add patient registration form with validation and database integration
+
+[33mcommit 70ce04b5e1c094e28124feeeb57a90a3a1419669[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:32:38 2025 +0530
+
+    Add SQLite database initialization and schema for patient management
+
+[33mcommit 792d5a82cb2123c20314eebe8b442ad9eb75089e[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Tue May 20 01:32:29 2025 +0530
+
+    Initial project setup with Vite, React, and TypeScript configuration
+
+[33mcommit 8a1bb225eaf3949a390464d8f7dbde8faace36ca[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Mon May 19 23:12:35 2025 +0530
+
+    fix: remove unnecessary dependency
+
+[33mcommit d6173f88f4ef3ab05b5eaf02cfebdf8b061467a6[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Mon May 19 23:09:26 2025 +0530
+
+    Add VS Code tasks for npm commands
+
+[33mcommit 52586ea4798bcb8d47fb6414e04498d408a511ef[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Mon May 19 23:08:43 2025 +0530
+
+    Add .gitignore file
+
+[33mcommit 5b85944259127ae3a12708cd2e70e985d1b7ad37[m
+Author: aryan <aryandevops2025@gmail.com>
+Date:   Mon May 19 23:08:12 2025 +0530
+
+    Initial commit: Basic project setup with React, TypeScript, and PgLite
